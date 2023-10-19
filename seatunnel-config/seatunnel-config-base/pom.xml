@@ -1,0 +1,125 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.seatunnel</groupId>
+        <artifactId>seatunnel-config</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>seatunnel-config-base</artifactId>
+    <name>SeaTunnel : Config : Base</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <skip.pmd.check>true</skip.pmd.check>
+
+        <!--制定重命名后的包名-->
+        <seatunnel.shade.package>org.apache.seatunnel.shade</seatunnel.shade.package>
+    </properties>
+    <dependencies>
+
+        <!--config 库源码地址 https://github.com/lightbend/config-->
+        <!--configuration library for JVM languages using HOCON files-->
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+
+        <finalName>${project.artifactId}-${project.version}</finalName>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <!--这个配置项启用了最小化可执行 JAR 文件的生成，以减小文件大小-->
+                    <minimizeJar>true</minimizeJar>
+                    <!--这允许创建一个包含源代码的 JAR 文件，以便进行调试或其他目的-->
+                    <createSourcesJar>true</createSourcesJar>
+                    <!--当创建源代码 JAR 时，此选项指示是否将源代码内容嵌入到可执行 JAR 中-->
+                    <shadeSourcesContent>true</shadeSourcesContent>
+                    <!--这个选项控制是否要将被“shade”（重命名和合并）的依赖作为附加到构建中的一个额外构件。
+                    在这里设置为 false，表示不生成附加的构建文件。-->
+                    <shadedArtifactAttached>false</shadedArtifactAttached>
+                    <!--这个配置项用于控制是否生成精简的依赖清单（POM），在这里设置为 false，表示不生成-->
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                    <!--这个部分定义了过滤器，指定了哪些类或文件应该被排除或包含在最终的可执行 JAR 文件中。
+                    在这个示例中，它排除了一些特定的类和文件-->
+                    <filters>
+                        <filter>
+                            <artifact>com.typesafe:config</artifact>
+                            <includes>
+                                <include>**</include>
+                            </includes>
+                            <excludes>
+                                <exclude>META-INF/MANIFEST.MF</exclude>
+                                <exclude>META-INF/NOTICE</exclude>
+                                <exclude>com/typesafe/config/ConfigParseOptions.class</exclude>
+                                <exclude>com/typesafe/config/ConfigMergeable.class</exclude>
+                                <exclude>com/typesafe/config/impl/ConfigParser.class</exclude>
+                                <exclude>com/typesafe/config/impl/ConfigNodePath.class</exclude>
+                                <exclude>com/typesafe/config/impl/PathParser.class</exclude>
+                                <exclude>com/typesafe/config/impl/Path.class</exclude>
+                                <exclude>com/typesafe/config/impl/SimpleConfigObject.class</exclude>
+                                <exclude>com/typesafe/config/impl/PropertiesParser.class</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                    <!--这个部分定义了有关如何重命名包的信息。
+                    在这个示例中，com.typesafe.config 被重命名为 ${seatunnel.shade.package}.com.typesafe.config。-->
+                    <relocations>
+                        <relocation>
+                            <pattern>com.typesafe.config</pattern>
+                            <shadedPattern>${seatunnel.shade.package}.com.typesafe.config</shadedPattern>
+                        </relocation>
+                    </relocations>
+                    <!--这里列出了一些用于转换生成的可执行 JAR 文件的插件，
+                    如 ApacheLicenseResourceTransformer 和 ApacheNoticeResourceTransformer。
+                    这些插件可以用于处理特定类型的资源文件-->
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                    </transformers>
+                </configuration>
+                <!--这个部分定义了 maven-shade-plugin 插件的执行过程，指定了在 package 阶段运行该插件的目标，即 shade。-->
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>${basedir}/target/${project.artifactId}-${project.version}.jar</file>
+                                    <type>jar</type>
+                                    <classifier>optional</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+</project>
